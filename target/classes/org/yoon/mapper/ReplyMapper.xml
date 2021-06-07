@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="org.yoon.mapper.ReplyMapper">
+	<!-- 댓글 추가 -->
+	<insert id="insert">
+		insert into reply (rno, bno, reply, replayer)
+		values (seq_reply.nextval, #{bno}, #{reply}, #{replayer})
+	</insert>
+	
+	<!-- 댓글조회 -->
+	<select id="read" resultType="org.yoon.domain.ReplyVO">
+		select * from reply where rno = #{rno}
+	</select>
+
+	<!-- 댓글 수정 -->
+	<update id="update">
+		update reply set reply = #{reply}, updatedate = sysdate
+		where rno = #{rno}
+	</update>
+	
+<!-- 	<select id="getListPaging" resultType="org.yoon.domain.ReplyVO">
+		select rno, bno, reply, replayer, replyDate, updatedate
+		from reply
+		where bno = #{bno}
+		order by rno asc	
+	</select> -->
+	
+	<!-- 댓글 삭제 -->
+	<delete id="delete">
+		delete from reply where rno = #{rno}
+	</delete>
+	
+	<!-- 댓글 페이징 처리 -->
+	<select id="getListPaging" resultType="org.yoon.domain.ReplyVO">
+	<![CDATA[
+		select rno, bno, reply, replayer, replydate, updatedate
+		from
+		(
+		  select /*+INDEX_DESC(reply idx_reply)*/
+		    rownum rn, rno, bno, reply, replayer, replydate, updatedate
+		  from reply
+		  where bno = #{bno} 
+		  and rno > 0
+		  and rownum <= #{cri.pageNum} * #{cri.amount}
+		) where rn> (#{cri.pageNum}-1) * #{cri.amount}
+	]]>
+	</select>
+	
+	<select id="getCountByBno" resultType="int">
+	<![CDATA[
+		select count(rno) from reply where bno = #{rno}
+	]]>
+	</select>
+</mapper>

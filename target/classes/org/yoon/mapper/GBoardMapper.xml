@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+  <mapper namespace="org.yoon.mapper.GBoardMapper">
+	  	<!-- 검색 조건 -->
+	<sql id="criteria">
+		<trim prefixOverrides="OR" prefix="(" suffix=") AND">
+			<foreach collection="typeArr" item="type">
+				<trim prefix="OR">
+					<choose>
+						<when test="type == 'T'.toString()">title like '%'||#{keyword}||'%'</when>
+						<when test="type == 'C'.toString()">content like '%'||#{keyword}||'%'</when>
+						<when test="type == 'W'.toString()">writer like '%'||#{keyword}||'%'</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+	
+	<!-- 글 페이징 출력 -->
+	<select id="getListPaging" resultType="org.yoon.domain.GBoardVO">
+		<![CDATA[
+		select
+			bno, title, content, writer, regdate, updatedate, replycnt, visit, recommend
+		from
+			(
+			select /*+INDEX_DESC(g_board pk_g_board) */
+	        	rownum rn, bno, title, content, writer, regdate, updatedate, replycnt, visit, recommend
+	        from
+	        	g_board
+	        where	
+			
+		]]>
+		<include refid="criteria"/>
+		<![CDATA[
+			rownum <= #{pageNum} * #{amount}
+			)
+		where rn > (#{pageNum} -1 )* #{amount}	
+		]]>
+	</select>
+
+  	<!-- 글등록-->
+	<insert id="insert">
+		insert into G_board (bno, title, content, writer)
+		values (G_board_sequence.nextval, #{title}, #{content}, #{writer})
+	</insert>
+	
+	<insert id="insertSelectKey">
+		<selectKey resultType="Long" order="BEFORE" keyProperty="bno">select G_board_sequence.nextval from dual</selectKey>
+		insert into G_board (bno, title, content, writer)
+		values (#{bno}, #{title}, #{content}, #{writer})
+	</insert>
+	
+	<!-- 조회수 올리기 -->
+	<update id="getMoreVisit">
+		update g_board set visit = nvl(visit, 0)+1 where bno = #{bno}
+	</update>
+	
+	<!-- 전체 글 숫자 출력 -->
+	<select id="getTotal" resultType="_int">
+		select count(*) from g_board 
+		where bno > 0 
+	</select>
+
+	<!-- 글 상세보기-->
+	<select id="read" resultType="org.yoon.domain.GBoardVO">
+		select * from G_board where bno = #{bno}
+	</select>
+	
+	<!-- 글 삭제하기 -->
+	<delete id="delete" >
+		delete from g_board where bno = #{bno}
+	</delete>
+	
+	<!-- 글 수정하기 -->
+	<update id="update">
+		update g_board
+	set title = #{title},
+	content = #{content},
+	writer = #{writer},
+	updatedate = sysdate
+	where bno = #{bno}
+	</update>
+	
+	<!-- 글 추천 -->
+	<insert id="recommend" parameterType="hashmap">
+		insert into 
+		rcm_G_board values(#{id}, #{bno}, default)
+	</insert>
+	
+	<!-- 게시글 추천 수 증가 -->
+	<update id="getMoreRecommend" >
+		update g_board set recommend=nvl(recommend, 0)+1 where bno = #{bno}
+	</update>
+
+	<!-- 게시글 추천 수 감소 -->
+	<update id="reduceRecommend" >
+		update g_board set recommend=nvl(recommend, 0)-1 where bno = #{bno}
+	</update>
+	
+	<!-- 추천여부 조회 -->
+	<select id="checkRecommend" resultType="_int" parameterType="hashmap">
+		select count(rcm_cnt) from rcm_g_board where bno = #{bno} and id = #{id}
+	</select>
+	
+	<!-- 추천 취소하기 -->
+	<delete id="cancelRecommend" parameterType="hashmap">
+		delete from rcm_g_board where bno = #{bno} and id = #{id}
+	</delete>
+	
+	<!-- 최신글 가져오기 -->
+	<select id="getNewList" resultType="org.yoon.domain.GBoardVO">
+		<![CDATA[
+			select * 
+			from( select * from g_board order by regdate desc ) 
+			where rownum <= 5
+		]]>
+	</select>
+	
+	<!-- 베스트 글 가져오기 -->
+	<select id="getBestList" resultType="org.yoon.domain.GBoardVO">
+		<![CDATA[
+			select * 
+			from( select * from g_board order by recommend desc )
+			where rownum <= 5
+		]]>
+	</select>
+  </mapper>

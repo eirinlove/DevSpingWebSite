@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="org.yoon.mapper.BoardMapper">
+<!-- 검색 조건 -->
+<sql id="criteria">
+	<trim prefixOverrides="OR" prefix="(" suffix=") AND">
+		<foreach collection="typeArr" item="type">
+			<trim prefix="OR">
+				<choose>
+					<when test="type == 'T'.toString()">title like '%'||#{keyword}||'%'</when>
+					<when test="type == 'C'.toString()">content like '%'||#{keyword}||'%'</when>
+					<when test="type == 'W'.toString()">writer like '%'||#{keyword}||'%'</when>
+				</choose>
+			</trim>
+		</foreach>
+	</trim>
+</sql>
+
+
+<!-- 글 페이징 출력 -->
+<select id="getListPaging" resultType="org.yoon.domain.BoardVO">
+	<![CDATA[
+	select
+		bno, title, content, writer, regdate, updatedate, replycnt,visit,recomend
+	from
+		(
+		select /*+INDEX_DESC(board pk_board) */
+        	rownum rn, bno, title, content, writer, regdate, updatedate, replycnt, visit, recomend
+        from
+        	board
+        where	
+		
+	]]>
+	<include refid="criteria"/>
+	<![CDATA[
+		rownum <= #{pageNum} * #{amount}
+		)
+	where rn > (#{pageNum} -1 )* #{amount}	
+	]]>
+</select>
+
+<!-- 단순 출력 -->
+<select id="getList" resultType="org.yoon.domain.BoardVO">
+<![CDATA[
+	select * from board where bno > 0
+]]>
+</select>
+
+
+<insert id="insert">
+	insert into board (bno, title, content, writer)
+	values (board_sequence.nextval, #{title}, #{content}, #{writer})
+</insert>
+
+<!-- 몇번째 글 등록 알람을 위해 -->
+<insert id="insertSelectKey">
+	<selectKey resultType="Long" order="BEFORE" keyProperty="bno">select board_sequence.nextval from dual</selectKey>
+	insert into board (bno, title, content, writer)
+	values (#{bno}, #{title}, #{content}, #{writer})
+</insert>
+
+
+<!-- 글조회 -->
+<select id="read" resultType="org.yoon.domain.BoardVO">
+	select * from board where bno = #{bno}
+</select>
+
+<!-- 글 삭제 -->
+<delete id="delete">
+	delete from board where bno = #{bno}
+</delete>
+
+<!-- 글 수정 -->
+<update id="update">
+	update board
+	set title = #{title},
+	content = #{content},
+	writer = #{writer},
+	updatedate = sysdate
+	where bno = #{bno}
+</update>
+
+<!-- 전체 글 숫자 출력 -->
+<select id="getTotal" resultType="int">
+	select count(*) from board 
+	where bno > 0 
+</select>
+
+<!-- 조회수 증가 -->
+<update id="visit">
+	update board set
+	visit = visit+1
+	where bno = #{bno}
+</update>
+
+<!-- 댓글 개수 -->
+<update id="updateReplyCnt">
+	update board set replycnt = replycnt + #{amount} where bno = #{bno}
+</update>
+
+<!-- 좋아요 기능 -->
+<update id="like">
+	update board set
+	recomend = recomend+1
+	where bno = #{bno}
+</update>
+
+</mapper>

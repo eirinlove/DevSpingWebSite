@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="org.yoon.mapper.AttachMapper">
+
+	<insert id="insert">
+		insert into attach (uuid, uploadPath, fileName, fileType, bno)
+		values (#{uuid}, #{uploadPath}, #{fileName}, #{fileType}, #{bno})
+	</insert>
+	
+	<delete id="delete">
+		delete from attach where uuid = #{uuid}
+	</delete>
+	
+		<delete id="deleteAll">
+		delete from attach where bno = #{bno}
+	</delete>
+	
+	<select id="findByBno" resultType="org.yoon.domain.BoardAttachVO">
+		select * from attach where bno = #{bno}
+	</select>
+	
+		<select id="getOldFiles" resultType="org.yoon.domain.BoardAttachVO">
+		select * from attach where uploadPath = to_char(sysdate-1, 'yyyy\mm\dd')
+	</select>
+
+</mapper>
