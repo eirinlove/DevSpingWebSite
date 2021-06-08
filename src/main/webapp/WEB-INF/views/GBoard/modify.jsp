@@ -17,14 +17,13 @@
 			str +="><div>";
 			str += "<span> "+obj.fileName+"</span>";
 			str += "<button type='button' data-file=\'"+fileCallPath+"\' data-type='image' class='btn btn-warning btn-circle'><i class='fa fa-times'></i></button><br>";
-			str += "<img src='/GBoard/display?fileName="+fileCallPath+"'>";
+			str += "<img src='/Gboard/display?fileName="+fileCallPath+"'>";
 			str += "</div>";
 			str += "</li>";
 		});
 		console.log(str);
 		uploadUL.append(str);
 	}
-
 	var regex= new RegExp("(.*?)\.(exe|sh|zip|alz)$");
 	var maxSize = 5242880; //5MB
 	
@@ -41,7 +40,6 @@
 		return true;
 	}
 	$(document).ready(function(){
-
 		var formObj = $("form");
 		
 	//1.버튼의 data-oper속성을 통해 수정/취소 판단 후 실행==========================================================
@@ -52,7 +50,7 @@
 			console.log(operation);
 			
 			if(operation === 'list'){
-				formObj.attr("action", "/GBoard/list").attr("method");
+				formObj.attr("action", "/Gboard/list").attr("method");
 				var pageNum= $("input[name='pageNum']").clone();
 				var amount=	$("input[name='amount']").clone();
 				
@@ -79,9 +77,8 @@
 		
 		
 		(function(){
-			var bno = '<c:out value="${gboard.bno}"/>';
-			$.getJSON("${pageContext.request.contextPath}/GBoard/getAttachList", {bno:bno}, function(arr){
-
+			var gno = '<c:out value="${Gboard.gno}"/>';
+			$.getJSON("${pageContext.request.contextPath}/Gboard/getAttachList", {gno:gno}, function(arr){
 				var str = "";
 				
 				$(arr).each(function(i,attach){
@@ -91,7 +88,7 @@
 						str += "<span> "+attach.fileName+"</span>";
 						str += "<button type='button' data-file=\'"+path+"\' data-type='image' ";
 						str += "class='btn btn-warning btn-circle'><i class='fa fa-times'></i></button><br>";
-						str += "<img src='/GBoard/display?fileName="+path+"'>";
+						str += "<img src='/Gboard/display?fileName="+path+"'>";
 						str += "</div>";
 						str += "</li>";
 					}
@@ -124,7 +121,7 @@
 			}
 		
 			$.ajax({
-				url: "${pagecontext.request.contextPath}/GBoard/uploadAjaxAction",
+				url: "${pagecontext.request.contextPath}/Gboard/uploadAjaxAction",
 				processData:false,
 				contentType: false,
 				data:formData,
@@ -189,14 +186,14 @@
         <div class="form-group">
           <label class="control-label col-sm-2" for="title">제목</label>
           <div class="col-sm-10">
-            <input type="text" class="form-control" id="title"  name="title" value="<c:out value="${gboard.title}"/>" />
+            <input type="text" class="form-control" id="title"  name="title" value="<c:out value="${Gboard.title}"/>" />
           </div>
         </div>
         <!--=========================작성자=========================-->
         <div class="form-group">
           <label class="control-label col-sm-2" for="writer">작성자</label>
           <div class="col-sm-10">          
-            <input type="text" class="form-control" id="writer" name="writer" value="<c:out value="${gboard.writer}"/>">
+            <input type="text" class="form-control" id="writer" name="writer" value="<c:out value="${Gboard.writer}"/>" readonly>
           </div>
         </div>
          <!--=========================글내용=========================-->
@@ -204,7 +201,7 @@
         <br>
         <div class="col-sm-offset-1">
           <textarea class="form-control" rows="20" id="comment" name="content" placeholder="내용을 입력해주세요." required>
-          <c:out value="${gboard.content}"/>
+          <c:out value="${Gboard.content}"/>
           </textarea>
         </div>
       </div>
@@ -240,14 +237,15 @@
           <div class="col-sm-offset-2 col-sm-10">
             <button type="submit" data-oper="update" class="btn btn-default">수정</button>
             <button type="submit" data-oper="list" class="btn btn-default">취소</button>
-            <input type="hidden" value='<c:out value="${gboard.bno }"/>' name="bno">
+            <input type="hidden" value='<c:out value="${Gboard.gno }"/>' name="gno">
+            <input type='hidden' name='${_csrf.parameterName}' value="${_csrf.token}"/>
           </div>
         </div>
       </form>
 </div>
   
   
-	<input id="bno" type="hidden" value="<c:out value='${gboard.bno}' />" />
+	<input id="gno" type="hidden" value="<c:out value='${Gboard.gno}' />" />
 	<input type='hidden' name='pageNum' value='<c:out value="${cri.pageNum}"/>'>
 	<input type='hidden' name='amount' value='<c:out value="${cri.amount}"/>'>
 	<input type='hidden' name='amount' value='<c:out value="${cri.amount}"/>' />

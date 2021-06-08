@@ -2,6 +2,8 @@
     pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ include file="../includes/header.jsp"%>
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <style>
   .register-btn,.postList{
@@ -15,21 +17,21 @@
 		
 		//배열에 글번호 리스트 추가
 		<c:forEach items="${list}" var="item">
-			arr.push("${item.bno}");
+			arr.push("${item.gno}");
 		</c:forEach>
 		
 		//글번호로 첨부파일 조회 후 첫번째 이미지 불러오기
 		$.each(arr, function(i, value){
-			$.getJSON("${pageContext.request.contextPath}/GBoard/getAttachList", {bno: value}, function(attach){
+			$.getJSON("/Gboard/getAttachList", {gno: value}, function(attach){
 				console.log(attach[0]);
 				var fileCallPath = encodeURIComponent(attach[0].uploadPath+"/"+attach[0].uuid+"_"+attach[0].fileName);
-				$(".thumbnail"+(i+1)+" .thumbnail-img").attr("src","/GBoard/display?fileName="+fileCallPath);
+				$(".thumbnail"+(i+1)+" .thumbnail-img").attr("src","/Gboard/display?fileName="+fileCallPath);
 			});
 		});
 		
 	});
 </script>	
-<%@ include file="../includes/header.jsp"%>
+
   <!--  =============================게시판 헤더 ==================================-->
     <div class="jumbotron">
       <h3>갤러리형 게시판</h3>
@@ -37,7 +39,7 @@
  <!--  ===========================검색조건 및 글 등록버튼  ===================================-->
     <div class="row register-btn" >
       <div class="col-lg-12">
-        <form id='searchForm' action="/GBoard/list" method='get'>
+        <form id='searchForm' action="/Gboard/list" method='get'>
           <div class="col-lg-2">
            <select name='type' class="form-control">
 				<option value=""
@@ -78,25 +80,25 @@
     </div>
 <!--  ===========================게시글 목록 ===================================-->
     <div class="wrapper">
-		<c:forEach items="${list}" var="gboard" varStatus="status">
+		<c:forEach items="${list}" var="Gboard" varStatus="status">
 		      <c:if test="${status.count%4 eq 1}">
 			      <div class="row postList">
 			  </c:if>
 			        <div class="col-lg-3">
 			          <div class="thumbnail${status.count}">
-			            <a class="move" href="<c:out value="${gboard.bno}" />" >
+			            <a class="move" href="<c:out value="${Gboard.gno}" />" >
 			             <img class="thumbnail-img"  alt="이미지" style="width:100%;height:300px;">
 			            </a>
 			              <div class="caption">
 			                <p>
-			                  <a class="move" href="<c:out value="${gboard.bno}" />" >
-			                 	<c:out value="${gboard.title}" /> 
+			                  <a class="move" href="<c:out value="${Gboard.gno}" />" >
+			                 	<c:out value="${Gboard.title}" /> 
 			                  </a>
 			                </p>
 			                  <img src="${pageContext.request.contextPath}/resources/img/userimage.jpg" style="width:30px;height:30px;"/> 
-			                  <span><c:out value="${gboard.writer}"/></span> 
+			                  <span><c:out value="${Gboard.writer}"/></span> 
 			                  <button type="button" class="btn btn-default btn-sm">
-			                    <span class="glyphicon glyphicon-thumbs-up"></span> 추천수 <c:out value="${gboard.recommend}"/> 
+			                    <span class="glyphicon glyphicon-thumbs-up"></span> 추천수 <c:out value="${Gboard.recommend}"/> 
 			                  </button> 
 			              </div>
 			          </div>
@@ -148,7 +150,7 @@
 		</c:if>
     </ul>
 
-    <form id='actionForm' action="/GBoard/list" method='get'>
+    <form id='actionForm' action="/Gboard/list" method='get'>
 		<input type='hidden' name='pageNum' value='<c:out value="${ pageMaker.cri.pageNum }"/>'>
 		<input type='hidden' name='amount' value='<c:out value="${ pageMaker.cri.amount }"/>'>
 		<input type='hidden' name='type' value='<c:out value="${ pageMaker.cri.type}"/>'>
@@ -156,17 +158,17 @@
 	</form>
   	<br><br>
 
-<%@ include file="../includes/footer.jsp"%>
+
 
 
 <script type="text/javascript">
-
 	var actionForm = $("#actionForm")
 	
 	$(".move").on("click",function(e){
 		e.preventDefault();
-		actionForm.append("<input type='hidden' name='bno' value='"+$(this).attr("href")+"'>");
-		actionForm.attr("action", "/GBoard/get").submit();
+		actionForm.append("<input type='hidden' name='gno' value='"+$(this).attr("href")+"'>");
+		actionForm.attr("method","get");
+		actionForm.attr("action", "/Gboard/get").submit();
 		
 	});
 	
@@ -226,6 +228,8 @@
 	 
 	 //글 등록 페이지=========================================
 	 $("#regBtn").on("click",function(){
-		self.location = "/GBoard/register"; 
+		self.location = "/Gboard/register"; 
 	 });
 </script>
+
+<%@ include file="../includes/footer.jsp"%>

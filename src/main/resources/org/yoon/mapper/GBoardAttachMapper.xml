@@ -5,19 +5,19 @@
  
  <mapper namespace="org.yoon.mapper.GBoardAttachMapper">
  	<insert id="insert">
- 		insert into g_attach (uuid, uploadpath, filename, filetype, bno) values
- 		(#{uuid}, #{uploadPath}, #{fileName}, #{fileType}, #{bno} )
+ 		insert into attach (uuid, uploadpath, filename, filetype, gno) values
+ 		(#{uuid}, #{uploadPath}, #{fileName}, #{fileType}, #{gno} )
  	</insert>
  	
  	<delete id="delete">
- 		delete from g_attach where uuid = #{uuid}
+ 		delete from attach where uuid = #{uuid}
  	</delete>
  	
  	<select id="findByBno" resultType="org.yoon.domain.GBoardAttachVO">
- 		select * from g_attach where bno = #{bno}
+ 		select * from attach where gno = #{gno}
  	</select>
  	
  	<delete id="deleteAll">
- 		delete g_attach where bno = #{bno}
+ 		delete attach where gno = #{gno}
  	</delete>
  </mapper>

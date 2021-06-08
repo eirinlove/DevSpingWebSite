@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -22,6 +23,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.FileCopyUtils;
@@ -46,18 +50,12 @@ import lombok.extern.log4j.Log4j;
 import net.coobird.thumbnailator.Thumbnailator;
 
 @Controller
-@RequestMapping("/GBoard/*")
+@RequestMapping("/Gboard/*")
 @Log4j
 @AllArgsConstructor
 public class GalleryBoardController {
 
 	private GBoardService service;
-	
-	@GetMapping("/test")
-	public String getTest(Model model) {
-		model.addAttribute("gNewList",service.getNewList());
-		return "main";
-	}
 	
 	//게시글목록 조회
 	@GetMapping("/list")
@@ -75,24 +73,26 @@ public class GalleryBoardController {
 	
 	//게시글 상세보기 및 수정페이지
 	@GetMapping({"/get","/modify"})
-	public void get(@RequestParam("bno") Long bno, Model model) {
+	public void get(@RequestParam("gno") Long gno, Model model) {
 		log.info("=============글 상세보기 및 수정================");
+		model.addAttribute("Gboard",service.get(gno));
 		
-		model.addAttribute("gboard",service.get(bno));
+		String userId = null;
+		userId = SecurityContextHolder.getContext().getAuthentication().getName();
+		int result = 0;
+
+		//1. 로그인한 경우
+		if(!userId.equals("anonymousUser")) {
+			HashMap<String, Object> map = new HashMap<>();
+			
+			map.put("id", userId);
+			map.put("gno", gno);
+			
+			//아이디와 글번호로 추천여부 조회
+			result = service.checkRecommend(map);
+		}
 		
-		HashMap<String, Object> map = new HashMap<>();
-		
-		//1.로그인한 경우
-		//==============아이디 수정!!!!!!!!!!!!!!!!!!!
-		map.put("id", 1);
-		map.put("bno", bno);
-		
-		//아이디와 글번호로 추천여부 조회
-		int result = service.checkRecommend(map);
-		
-		//2. 로그인 안 한 경우 작성하기!!!!!!!!!!!!!
-		
-		//추천글이 아닌 경우 & 로그인 안 한 경우
+		//2. 로그인 했는데 추천글이 아닌 경우 & 로그인 안 한 경우
 		if(result == 0) {
 			model.addAttribute("isRecommend", false);
 		}else {
@@ -104,11 +104,13 @@ public class GalleryBoardController {
 	
 	//게시글 등록페이지
 	@GetMapping("/register")
+	@PreAuthorize("isAuthenticated()")
 	public void register() {}
 	
 	
 	//게시글 등록
 	@PostMapping("/register")
+	@PreAuthorize("isAuthenticated()")
 	public String register(GBoardVO vo, RedirectAttributes rttr) {
 		log.info("===============게시글 등록=================");
 		log.info("register : "+vo);
@@ -120,32 +122,34 @@ public class GalleryBoardController {
 		log.info("=========================================");
 		
 		service.register(vo);
-		rttr.addFlashAttribute("result", vo.getBno());
+		rttr.addFlashAttribute("result", vo.getGno());
 		
-		return "redirect:/GBoard/list";
+		return "redirect:/Gboard/list";
 	}
 
 	//게시글 수정
+	@PreAuthorize("principal.username==#vo.writer")
 	@PostMapping("/modify")
 	public String modify(GBoardVO vo, RedirectAttributes rttr) {
 		log.info("================게시글 수정===============:"+vo);
 		if(service.modify(vo)) {
 			rttr.addFlashAttribute("result","msuccess");
 		}
-		return "redirect:/GBoard/list";
+		return "redirect:/Gboard/list";
 	}
 	
 	//게시글 삭제
+	@PreAuthorize("principal.username==#writer")
 	@PostMapping("/remove")
-	public String remove(@RequestParam("bno") long bno, RedirectAttributes rttr) {
-		log.info("==============게시글 삭제============="+bno);
-		List<GBoardAttachVO> attachList = service.getAttachList(bno);
+	public String remove(@RequestParam("gno") long gno, RedirectAttributes rttr) {
+		log.info("==============게시글 삭제============="+gno);
+		List<GBoardAttachVO> attachList = service.getAttachList(gno);
 		
-		if(service.delete(bno)) {
+		if(service.delete(gno)) {
 			deleteFiles(attachList);
 			rttr.addFlashAttribute("result", "dsuccess");
 		}
-		return "redirect:/GBoard/list";
+		return "redirect:/Gboard/list";
 	}
 	
 	//파일 업로드 시점 기준 날짜폴더 생성
@@ -159,12 +163,13 @@ public class GalleryBoardController {
 	}
 	
 	//업로드 파일 등록
+	@PreAuthorize("isAuthenticated()")
 	@PostMapping(value="/uploadAjaxAction", produces=MediaType.APPLICATION_JSON_UTF8_VALUE)
 	@ResponseBody
 	public ResponseEntity<List<GBoardAttachVO>> uploadAjaxPost(MultipartFile[] uploadFile) {
 		
 		List<GBoardAttachVO> list = new ArrayList<>();
-		String uploadFolder = "C:\\upload";
+		String uploadFolder = "C:\\upload1";
 
 		String uploadFolderPath = getFolder();
 
@@ -214,7 +219,7 @@ public class GalleryBoardController {
 	@ResponseBody
 	public ResponseEntity<byte[]> getFile(String fileName){
 		
-		File file = new File("C:\\upload\\"+fileName);
+		File file = new File("C:\\upload1\\"+fileName);
 		ResponseEntity<byte[]> result = null;
 		try {
 			HttpHeaders header = new HttpHeaders();
@@ -262,13 +267,14 @@ public class GalleryBoardController {
 	}
 	
 	//업로드 파일 삭제
+	@PreAuthorize("isAuthenticated()")
 	@PostMapping("/deleteFile")
 	@ResponseBody
 	public ResponseEntity<String> deleteFile(String fileName, String type){
 		File file;
 		
 		try {
-			file = new File("c:\\upload\\"+URLDecoder.decode(fileName,"UTF-8"));
+			file = new File("c:\\upload1\\"+URLDecoder.decode(fileName,"UTF-8"));
 			file.delete();
 			if(type.equals("image")) {
 				String largeFileName = file.getAbsolutePath().replace("s_", "");
@@ -286,9 +292,9 @@ public class GalleryBoardController {
 	//글 번호로 첨부파일 목록 조회
 	@GetMapping(value= "/getAttachList", produces=MediaType.APPLICATION_JSON_UTF8_VALUE)
 	@ResponseBody
-	public ResponseEntity<List<GBoardAttachVO>> getAttachList(Long bno){
-		log.info("getAttachList"+bno);
-		return new ResponseEntity<>(service.getAttachList(bno), HttpStatus.OK);
+	public ResponseEntity<List<GBoardAttachVO>> getAttachList(Long gno){
+		log.info("getAttachList"+gno);
+		return new ResponseEntity<>(service.getAttachList(gno), HttpStatus.OK);
 	}
 	
 	
@@ -299,10 +305,10 @@ public class GalleryBoardController {
 		}
 		attachList.forEach(attach -> {
 			try {
-				Path file = Paths.get("C:\\upload\\"+attach.getUploadPath()+"\\"+attach.getUuid()+"_"+attach.getFileName());
+				Path file = Paths.get("C:\\upload1\\"+attach.getUploadPath()+"\\"+attach.getUuid()+"_"+attach.getFileName());
 				Files.deleteIfExists(file);
 				if(Files.probeContentType(file).startsWith("image")) {
-					Path thumbNail = Paths.get("C:\\upload\\"+attach.getUploadPath()+"\\s_"+attach.getUuid()+"_"+attach.getFileName());
+					Path thumbNail = Paths.get("C:\\upload1\\"+attach.getUploadPath()+"\\s_"+attach.getUuid()+"_"+attach.getFileName());
 					Files.delete(thumbNail);
 				}
 			}catch(Exception e) {
@@ -312,13 +318,14 @@ public class GalleryBoardController {
 	}
 	
 	//게시글 추천
+	@PreAuthorize("isAuthenticated()")
 	@PostMapping("/recommend")
 	@ResponseBody
-	public String recommend(@RequestParam("id") int id, @RequestParam("bno") long bno) {
+	public String recommend(@RequestParam("id") int id, @RequestParam("gno") long gno) {
 		log.info("게시글 추천하기");
 		HashMap<String, Object> map = new HashMap<>();
 		map.put("id", id);
-		map.put("bno", bno);
+		map.put("gno", gno);
 		
 		int result = service.checkRecommend(map);
 		

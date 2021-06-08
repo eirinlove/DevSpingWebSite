@@ -23,11 +23,11 @@
 	<select id="getListPaging" resultType="org.yoon.domain.GBoardVO">
 		<![CDATA[
 		select
-			bno, title, content, writer, regdate, updatedate, replycnt, visit, recommend
+			gno, title, content, writer, regdate, updatedate, replycnt, visit, recommend
 		from
 			(
 			select /*+INDEX_DESC(g_board pk_g_board) */
-	        	rownum rn, bno, title, content, writer, regdate, updatedate, replycnt, visit, recommend
+	        	rownum rn, gno, title, content, writer, regdate, updatedate, replycnt, visit, recommend
 	        from
 	        	g_board
 	        where	
@@ -43,35 +43,35 @@
 
   	<!-- 글등록-->
 	<insert id="insert">
-		insert into G_board (bno, title, content, writer)
+		insert into G_board (gno, title, content, writer)
 		values (G_board_sequence.nextval, #{title}, #{content}, #{writer})
 	</insert>
 	
 	<insert id="insertSelectKey">
-		<selectKey resultType="Long" order="BEFORE" keyProperty="bno">select G_board_sequence.nextval from dual</selectKey>
-		insert into G_board (bno, title, content, writer)
-		values (#{bno}, #{title}, #{content}, #{writer})
+		<selectKey resultType="Long" order="BEFORE" keyProperty="gno">select G_board_sequence.nextval from dual</selectKey>
+		insert into G_board (gno, title, content, writer)
+		values (#{gno}, #{title}, #{content}, #{writer})
 	</insert>
 	
 	<!-- 조회수 올리기 -->
 	<update id="getMoreVisit">
-		update g_board set visit = nvl(visit, 0)+1 where bno = #{bno}
+		update g_board set visit = nvl(visit, 0)+1 where gno = #{gno}
 	</update>
 	
 	<!-- 전체 글 숫자 출력 -->
 	<select id="getTotal" resultType="_int">
 		select count(*) from g_board 
-		where bno > 0 
+		where gno > 0 
 	</select>
 
 	<!-- 글 상세보기-->
 	<select id="read" resultType="org.yoon.domain.GBoardVO">
-		select * from G_board where bno = #{bno}
+		select * from G_board where gno = #{gno}
 	</select>
 	
 	<!-- 글 삭제하기 -->
 	<delete id="delete" >
-		delete from g_board where bno = #{bno}
+		delete from g_board where gno = #{gno}
 	</delete>
 	
 	<!-- 글 수정하기 -->
@@ -81,33 +81,33 @@
 	content = #{content},
 	writer = #{writer},
 	updatedate = sysdate
-	where bno = #{bno}
+	where gno = #{gno}
 	</update>
 	
 	<!-- 글 추천 -->
 	<insert id="recommend" parameterType="hashmap">
 		insert into 
-		rcm_G_board values(#{id}, #{bno}, default)
+		rcm_G_board values(#{id}, #{gno}, default)
 	</insert>
 	
 	<!-- 게시글 추천 수 증가 -->
 	<update id="getMoreRecommend" >
-		update g_board set recommend=nvl(recommend, 0)+1 where bno = #{bno}
+		update g_board set recommend=nvl(recommend, 0)+1 where gno = #{gno}
 	</update>
 
 	<!-- 게시글 추천 수 감소 -->
 	<update id="reduceRecommend" >
-		update g_board set recommend=nvl(recommend, 0)-1 where bno = #{bno}
+		update g_board set recommend=nvl(recommend, 0)-1 where gno = #{gno}
 	</update>
 	
 	<!-- 추천여부 조회 -->
 	<select id="checkRecommend" resultType="_int" parameterType="hashmap">
-		select count(rcm_cnt) from rcm_g_board where bno = #{bno} and id = #{id}
+		select count(rcm_cnt) from rcm_board where gno = #{gno} and userid = #{id}
 	</select>
 	
 	<!-- 추천 취소하기 -->
 	<delete id="cancelRecommend" parameterType="hashmap">
-		delete from rcm_g_board where bno = #{bno} and id = #{id}
+		delete from rcm_board where gno = #{gno} and userid = #{id}
 	</delete>
 	
 	<!-- 최신글 가져오기 -->

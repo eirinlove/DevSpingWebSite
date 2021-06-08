@@ -2,6 +2,7 @@
   pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
 	
@@ -18,14 +19,13 @@
 			str +="><div>";
 			str += "<span> "+obj.fileName+"</span>";
 			str += "<button type='button' data-file=\'"+fileCallPath+"\' data-type='image' class='btn btn-warning btn-circle'><i class='fa fa-times'></i></button><br>";
-			str += "<img src='/GBoard/display?fileName="+fileCallPath+"'>";
+			str += "<img src='/Gboard/display?fileName="+fileCallPath+"'>";
 			str += "</div>";
 			str += "</li>";
 		});
 		console.log(str);
 		uploadUL.append(str);
 	}
-
 	//=====================파일 확장자 및 크기 
 	var regex= new RegExp("(.*?)\.(exe|sh|zip|alz)$");
 	var maxSize = 5242880; //5MB
@@ -43,6 +43,14 @@
 		return true;
 	}
 	$(document).ready(function(){
+		//csrf 토큰값===========================================================================
+		var csrfHeaderName = "${_csrf.headerName}";
+		var csrfTokenValue = "${_csrf.token}";
+		
+		//jquery로 자동으로 토큰 값 전송====================================================================
+		$(document).ajaxSend(function(e,xhr,options){
+			xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+		});
 		
 		//====================첨부파일 목록 삭제
 		$(".uploadResult").on("click","button",function(e){
@@ -52,7 +60,7 @@
 			var targetLi = $(this).closest("li");
 			
 			$.ajax({
-				url: '${pageContext.request.contextPath}/GBoard/deleteFile',
+				url: '${pageContext.request.contextPath}/Gboard/deleteFile',
 				data:{fileName:targetFile, type:type},
 				dataType:'text',
 				type:'POST',
@@ -80,8 +88,8 @@
 				str += "<input type='hidden' name='attachList["+i+"].fileType' value='"+jobj.data("type")+"'>";
 			});
 				formObj.append(str).submit();
-		});
-	
+		});// end button submit
+
 		//=======================파일 확장자 및 크기 확인 후 등록
 		$("input[type='file']").change(function(e){
 			
@@ -97,12 +105,16 @@
 			}
 		
 			$.ajax({
-				url: "${pagecontext.request.contextPath}/GBoard/uploadAjaxAction",
+				url: "${pagecontext.request.contextPath}/Gboard/uploadAjaxAction",
+				//url: "/Gboard/uploadAjaxAction",
 				processData:false,
 				contentType: false,
 				data:formData,
 				dataType:'json',
 				type:"POST",
+				beforeSend: function(xhr){
+					xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+				},
 				success:function(result){
 					console.log(result);
 					showUploadedFile(result);
@@ -155,6 +167,7 @@
     <!-- /.row -->
      <div class="container">
       <form class="form-horizontal" method="post" >
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
         <!--=========================제목=========================-->
         <div class="form-group">
           <label class="control-label col-sm-2" for="title">제목</label>
@@ -166,7 +179,7 @@
         <div class="form-group">
           <label class="control-label col-sm-2" for="writer">작성자</label>
           <div class="col-sm-10">          
-            <input type="text" class="form-control" id="writer" name="writer" >
+            <input type="text" class="form-control" id="writer" name="writer" value="<sec:authentication property="principal.username"/>" readonly >
           </div>
         </div>
          <!--=========================글내용=========================-->
@@ -207,7 +220,7 @@
         <div class="form-group">        
           <div class="col-sm-offset-2 col-sm-10">
             <button type="submit" class="btn btn-default">등록</button>
-            <a href="/GBoard/list" class="btn btn-default">취소</a>
+            <a href="/Gboard/list" class="btn btn-default">취소</a>
           </div>
         </div>
       </form>

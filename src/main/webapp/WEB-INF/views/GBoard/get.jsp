@@ -2,6 +2,7 @@
     pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <style>
 	/* 이미지 슬라이드 크기 조정 */
@@ -57,20 +58,69 @@
 	}
 </style>
 <script>
-	$(document).ready(function(){
-		(function(){
-			var bno = '<c:out value="${gboard.bno}"/>';
-			$.getJSON("${pageContext.request.contextPath}/GBoard/getAttachList", {bno: bno}, function(arr){
+//추천하기======================================================
+function recommend(id){
+		var rcmText = $("#recommendText").text().trim();
 
+		console.log(id);
+		//로그인 한 사용자만 추천 가능
+		if(!id){
+			alert("로그인한 사용자만 추천이 가능합니다.");
+		}else{
+			if(rcmText === "추천하기"  ){
+				var check = confirm("해당 글을 추천하시겠습니까?")
+			}else if(rcmText === '추천취소'){
+				var check = confirm("추천을 취소하겠습니까?")
+			}
+			if(check){
+				var gno = "${Gboard.gno}";
+				$.ajax({
+					url: "/Gboard/recommend",
+					data: {id:id,gno: gno},
+					type: "post",
+					success:function(result){
+						if(result == 'recommend'){
+							$("#recommendText").empty();
+							$("#recommendText").text("추천취소");
+							
+						}else{
+							$("#recommendText").empty();
+							$("#recommendText").text("추천하기");
+						}
+						history.go(0);
+					},
+					error:function(request,status,error){
+						alert("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);
+					}
+				}); //end ajax
+			}//end if
+		}//end else
+	}//end function recommend()
+	
+	$(document).ready(function(){
+		
+		//csrf 토큰값===========================================================================
+		var csrfHeaderName = "${_csrf.headerName}";
+		var csrfTokenValue = "${_csrf.token}";
+		
+		//jquery로 자동으로 토큰 값 전송====================================================================
+		$(document).ajaxSend(function(e,xhr,options){
+			xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+		});
+		
+		(function(){
+			var gno = '<c:out value="${Gboard.gno}"/>';
+			console.log(gno);
+			$.getJSON("/Gboard/getAttachList", {gno: gno}, function(arr){
 				var str = "";
 				//글내용 위에 이미지슬라이드
 				$(arr).each(function(i,attach){
 					if(attach.fileType){
 						var fileCallPath = encodeURIComponent(attach.uploadPath+"/"+attach.uuid+"_"+attach.fileName);
 						if(i===0){
-							str += "<div class='item active'> <img src='/GBoard/display?fileName="+fileCallPath+"' style='width:100%;' ></div>"; 							
+							str += "<div class='item active'> <img src='/Gboard/display?fileName="+fileCallPath+"' style='width:100%;' ></div>"; 							
 						}else{
-							str += "<div class='item'> <img src='/GBoard/display?fileName="+fileCallPath+"' style='width:100%;' ></div>";	
+							str += "<div class='item'> <img src='/Gboard/display?fileName="+fileCallPath+"' style='width:100%;' ></div>";	
 						}						
 					}
 				});
@@ -84,7 +134,7 @@
 					if(attach.fileType){
 						var path = encodeURIComponent(attach.uploadPath+"/s_"+attach.uuid+"_"+attach.fileName);
 						list += "<li data-path='"+attach.uploadPath+"' data-uuid='"+attach.uuid+"' data-filename='"+attach.fileName+"' data-type='"+attach.fileType+"' ><div>";
-						list += "<img src='/GBoard/display?fileName="+path+"'>";
+						list += "<img src='/Gboard/display?fileName="+path+"'>";
 						list += "</div>";
 						list += "</li>";
 					}
@@ -100,81 +150,51 @@
 			
 			var imgPath = encodeURIComponent(liObj.data("path")+"/"+liObj.data("uuid")+"_"+liObj.data("filename"));
 			
-			self.location = "/GBoard/download?fileName="+imgPath;
+			self.location = "/Gboard/download?fileName="+imgPath;
 		});
 		
-		//추천하기======================================================
-		$("#recommend").on("click",function(){
-				var rcmText = $("#recommendText").text().trim();
-				console.log(rcmText);
-				if(rcmText === "추천하기"){
-					var check = confirm("해당 글을 추천하시겠습니까?")
-				}else if(rcmText === '추천취소'){
-					var check = confirm("추천을 취소하겠습니까?")
-				}
-				if(check){
-					var bno = "${gboard.bno}";
-					$.ajax({
-						url: "${pageContext.request.contextPath}/GBoard/recommend",
-						data: {id:1,bno: bno},
-						type: "post",
-						success:function(result){
-							if(result == 'recommend'){
-								$("#recommendText").empty();
-								$("#recommendText").text("추천취소");
-								
-							}else{
-								$("#recommendText").empty();
-								$("#recommendText").text("추천하기");
-							}
-							history.go(0);
-						},
-						error:function(request,status,error){
-							alert("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);
-						}
-					});
-					
-				}
+		
 			
-		});
 	});
 </script>
-
 <%@ include file="../includes/header.jsp"%>
-      <!----------------------- 게시판 헤더  ------------------------------->
-    
+
+	<!-- ==============================로그인 시 사용자 아이디 저장============================ -->
+	<sec:authorize access="isAuthenticated()">
+		<sec:authentication property="principal.username" var="id"/>
+	</sec:authorize>
+     <!----------------------- 게시판 헤더  ------------------------------->
       <div class="jumbotron">
         <h3>갤러리형 게시판</h3>
       </div>
-    
     <!------------게시글 내용, 작성자, 작성일, 조회수, 추천수 ---------------------->
     <div class="container p-contents">
       <div class="row">
         <div class="col-lg-12">
-          <h2><c:out value="${gboard.title}" /></h2>
+          <h2><c:out value="${Gboard.title}" /></h2>
         </div>
           <div class="col-lg-12 post-info">
             <div class="col-lg-1">
               <img src="${pageContext.request.contextPath}/resources/img/userimage.jpg" style="width:70px;height:70px;"/>  
             </div>
             <div class="col-lg-2">
-              <span class="post-info"><c:out value="${gboard.writer}" /></span><br>
+              <span class="post-info"><c:out value="${Gboard.writer}" /></span><br>
               <span class="post-info"> 
-              <c:if test="${empty gboard.updatedate}">
-              	<fmt:formatDate pattern="yyyy-MM-dd" value="${gboard.regdate}" />
+              <c:if test="${empty Gboard.updatedate}">
+              	<fmt:formatDate pattern="yyyy-MM-dd" value="${Gboard.regdate}" />
               	작성 
               </c:if>
-              <c:if test="${!empty gboard.updatedate}">
-              	<fmt:formatDate pattern="yyyy-MM-dd" value="${gboard.updatedate}" />
+              <c:if test="${!empty Gboard.updatedate}">
+              	<fmt:formatDate pattern="yyyy-MM-dd" value="${Gboard.updatedate}" />
               	수정
               </c:if>
               </span> 
             </div>
             <div class="col-lg-9 text-right">
-              <span class="post-info">조회수 <c:out value="${gboard.visit}"/></span> 
-              <span class="post-info">추천수 <c:out value="${gboard.recommend }"/></span><br>
+              <span class="post-info">조회수 <c:out value="${Gboard.visit}"/></span> 
+              <span class="post-info">추천수 <c:out value="${Gboard.recommend }"/></span><br>
              
-	              <button type="button" class="btn btn-default" id="recommend">
+	              <button type="button" class="btn btn-default" id="recommend" onclick="recommend('${id}');">
 	                 <span class="glyphicon glyphicon-thumbs-up"></span> 
 	                 <span id="recommendText">
 	          <c:if test="${!isRecommend}">        
@@ -220,7 +240,7 @@
   <div class="row">
     <div class="col-lg-12 text-center">
       <p>
-        <c:out value="${gboard.content}"/>
+        <c:out value="${Gboard.content}"/>
       </p>  
     </div>
   </div>
@@ -239,37 +259,43 @@
 
   
   <!-- ------------------------------목록, 수정, 삭제 버튼----------------------- -->
-  <button data-oper="list" class="btn btn-default">목록</button>  
-  <button data-oper="modify" class="btn btn-default">글 수정</button>
-  <button data-oper="remove" class="btn btn-default" >글 삭제</button>
+  <button data-oper="list" class="btn btn-default">목록</button> 
+  <sec:authentication property="principal" var="pinfo"/>
+  	<sec:authorize  access="isAuthenticated()">
+  		<c:if test="${pinfo.username eq Gboard.writer}">
+		  <button data-oper="modify" class="btn btn-default">글 수정</button>
+		  <button data-oper="remove" class="btn btn-default" >글 삭제</button>
+  		</c:if>
+  	</sec:authorize> 
   <form method="post">
-  	<input type="hidden" name="bno" value='<c:out value="${board.bno}"/>' >
+  	<input type="hidden" name="gno" value='<c:out value="${Gboard.gno}"/>' >
 	<input type='hidden' name='pageNum' value='<c:out value="${cri.pageNum}"/>'>
 	<input type='hidden' name='amount' value='<c:out value="${cri.amount}"/>'>
  	<input type='hidden' name='type' value='<c:out value="${cri.type }"/>'>
  	<input type='hidden' name='keyword' value='<c:out value="${cri.keyword }"/>'>
+    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
  </form>  
   
   <br><br>  
 </div>
 
-<%@ include file="../includes/footer.jsp"%>
 
 
 <script type="text/javascript">
-
 	//목록/수정/삭제 버튼 클릭 시 이동=====================================================================
 	var formObj = $("form");
 	$(document).ready(function(){
 		$("button[data-oper='modify']").on('click',function(e){
-			formObj.attr("action","/GBoard/modify").attr("method","get").submit();
+			formObj.attr("action","/Gboard/modify").attr("method","get").submit();
 		});
 		$("button[data-oper='list']").on('click',function(e){
-			formObj.attr("action","/GBoard/list").attr("method","get").empty().submit();
+			formObj.attr("action","/Gboard/list").attr("method","get").empty().submit();
 		});
 		$("button[data-oper='remove']").on('click',function(e){
-			formObj.attr("action","/GBoard/remove").submit();
+			formObj.attr("action","/Gboard/remove").submit();
 		});
 	});
 	
 </script>
+
+<%@ include file="../includes/footer.jsp"%>
