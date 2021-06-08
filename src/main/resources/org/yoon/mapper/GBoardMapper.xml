@@ -87,7 +87,8 @@
 	<!-- 글 추천 -->
 	<insert id="recommend" parameterType="hashmap">
 		insert into 
-		rcm_G_board values(#{id}, #{gno}, default)
+		rcm_board (userid, gno) 
+		values(#{id}, #{gno})
 	</insert>
 	
 	<!-- 게시글 추천 수 증가 -->
@@ -102,7 +103,7 @@
 	
 	<!-- 추천여부 조회 -->
 	<select id="checkRecommend" resultType="_int" parameterType="hashmap">
-		select count(rcm_cnt) from rcm_board where gno = #{gno} and userid = #{id}
+		select count(*) from rcm_board where gno = #{gno} and userid = #{id}
 	</select>
 	
 	<!-- 추천 취소하기 -->

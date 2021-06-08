@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class GBoardVO {
 
-	private long bno;
+	private long gno;
 	private String title;
 	private String content;
 	private String writer;
