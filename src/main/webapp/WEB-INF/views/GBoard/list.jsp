@@ -164,6 +164,8 @@
 <script type="text/javascript">
 	var actionForm = $("#actionForm")
 	
+	$(document).ready(function(){
+		
 	$(".move").on("click",function(e){
 		e.preventDefault();
 		actionForm.append("<input type='hidden' name='gno' value='"+$(this).attr("href")+"'>");
@@ -209,7 +211,14 @@
 	 
 	 history.replaceState({},null,null);
 	 
-	 function checkModal(result){
+	//글 등록 페이지=========================================
+	 $("#regBtn").on("click",function(){
+		self.location = "/Gboard/register"; 
+	 });
+	
+	});
+	
+	function checkModal(result){
 		 if(result==='' || history.state){
 			 return;
 		 }
@@ -226,10 +235,7 @@
 	 }
 	 
 	 
-	 //글 등록 페이지=========================================
-	 $("#regBtn").on("click",function(){
-		self.location = "/Gboard/register"; 
-	 });
+	 
 </script>
 
 <%@ include file="../includes/footer.jsp"%>

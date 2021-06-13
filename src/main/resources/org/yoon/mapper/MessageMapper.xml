@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="org.yoon.mapper.MessageMapper">
+	
+	<!-- 해당 아이디에 수신된 쪽지 수 가져오기 -->
+	<select id="countMessageView" resultType="string">
+		select count(*) from message where receiver = #{receiver} and readyn = 'N'
+	</select>
+	
+	<!-- 아이디에 수신된 최근 쪽지 3개 가져오기 -->
+	<select id="readRecentMessages" resultType="org.yoon.domain.MessageVO">
+		<![CDATA[
+			select * from(
+			select * from message where receiver = #{receiver} 
+			order by mno desc
+			) where rownum <= 3 
+		]]>
+	</select>
+	
+	<!-- 쪽지 보내기 -->
+	<insert id="insert">
+		insert into message values(message_sequence.nextval, #{receiver}, sysdate, #{content}, #{sender}, default)
+	</insert>
+	
+	<!-- 받은 쪽지함 리스트 가져오기 -->
+	<select id="receptionList" resultType="org.yoon.domain.MessageVO">
+		select * from message where receiver = #{receiver} order by mno desc
+	</select>
+	
+	<!-- 보낸 쪽지함 리스트 가져오기 -->
+	<select id="sentList" resultType="org.yoon.domain.MessageVO">
+		select * from message where sender = #{sender} order by mno desc
+	</select>
+	
+	<!-- 쪽지 읽음처리 -->
+	<update id="readMessage">
+		update message set readYN = 'Y' where mno = #{mno}
+	</update>
+	
+	<!-- 쪽지 삭제 -->
+	<delete id="delete">
+		delete from message where mno = #{mno}
+	</delete>
+	
+</mapper>

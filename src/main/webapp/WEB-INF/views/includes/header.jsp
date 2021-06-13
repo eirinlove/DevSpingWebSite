@@ -1,12 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-    
-<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>        
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>      
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>  
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,11 +38,112 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-
 </head>
+<script type="text/javascript">
 
+$(document).ready(function(){
+	
+	//csrf 토큰값===========================================================================
+	var csrfHeaderName = "${_csrf.headerName}";
+	var csrfTokenValue = "${_csrf.token}";
+
+	var socket = null;
+	//쪽지 알림 기능 ===========================================================================
+	connect();
+	
+	//최근 받은 쪽지 3개 보여주기==================================================================
+	$("#recentMsg").on("click",function(e){
+		e.preventDefault();
+		var str = "";
+		
+		$.ajax({
+			type:"post",
+			dataType:"json",
+			url:"/message/recent",
+			data: {"userId": $("#id").val()},
+			beforeSend: function(xhr){
+				xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+			},
+			success:function(data){
+				var list = data.result;
+				var i = 1;
+				list.forEach(function(result){
+					if($("#"+i).length==0){
+						//읽지않은 쪽지표시====================================================================
+						if(result.readYN=='N'){
+							str += "<li style='background:#ccc' id='"+i+"'>";
+						}else{
+							str += "<li id='"+i+"'>";
+						}
+	                    str += ' <a href="/message/list">';
+	                    str += "<div>";
+	                    str += "<strong>"+result.sender+"</strong>";
+	                    str += '<span class="pull-right text-muted">';
+	                    str += "<em>"+formatDate(result.msgDate)+"</em>";
+	                    str += "</span></div>";
+	                    str += "<div>"+result.content+"</div>";
+	                    str += "</a></li><li class='divider'></li>";
+						i++;
+					}
+				});
+				$("#msgResult").append(str);
+			}
+		});//end ajax
+	})//end on click
+
+}); //end document ready
+
+//날짜포맷 함수=======================================================================================================
+	function formatDate(date) { 
+		var d = new Date(date), 
+		month = '' + (d.getMonth() + 1), 
+		day = '' + d.getDate(), 
+		year = d.getFullYear(); 
+		
+		if (month.length < 2) 
+			month = '0' + month; 
+		if (day.length < 2) 
+			day = '0' + day; 
+		
+		return [year, month, day].join('-'); 
+		}
+
+	 
+// 로그인 시 읽지 않은 쪽지 개수 알림 ================================================================================================
+function connect(){
+	var ws = new WebSocket("ws://localhost:8181/echo?gno=32");
+	socket = ws;
+	var id = $("#id").val();
+	
+	ws.onopen = function () {
+	    console.log('Info: connection opened.');
+	    socket.send(id);
+	};
+
+	ws.onmessage = function (event) {
+	    var splitdata = event.data.split(":");
+	    var str = "";
+	    var list = new Array();
+	    if(splitdata[0].indexOf("recMsg")>-1)
+	    	$("#recMsg").append(splitdata[1]);
+	    else
+	    	$("#recMsg").append(event.data);
+	};
+
+	ws.onclose = function (event) { 
+		console.log('Info: connection closed.'); 
+		};
+	
+	ws.onerror = function (event) { console.log('Info: connection closed.'); 
+	};
+
+}
+
+</script>
 <body>
-
+<sec:authorize access="isAuthenticated()">
+		<sec:authentication property="principal.username" var="id"/>
+</sec:authorize>
     <div id="wrapper">
 
         <!-- Navigation -->
@@ -58,60 +158,32 @@
                 <a class="navbar-brand" href="/">스프링 커뮤니티</a>
             </div>
             <!-- /.navbar-header -->
-
+			
             <ul class="nav navbar-top-links navbar-right">
+            	<!-- ========================로그인한 사용자만 쪽지함 보여짐====================================== -->
+                <sec:authorize access="isAuthenticated()">
+					<sec:authentication property="principal.username" var="id"/>
+						<input type="hidden" id="id" value="${id}" />
+                <li><strong>${id}님</strong> </li>
+                <!-- =========================================================쪽지함====================================== -->
                 <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        <i class="fa fa-envelope fa-fw"></i> <i class="fa fa-caret-down"></i>
+                    <a class="dropdown-toggle" data-toggle="dropdown" id="recentMsg">
+                        <i class="fa fa-envelope fa-fw"></i> <span class="badge" id="recMsg"></span> <i class="fa fa-caret-down" ></i>
                     </a>
-                    <ul class="dropdown-menu dropdown-messages">
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <strong>John Smith</strong>
-                                    <span class="pull-right text-muted">
-                                        <em>Yesterday</em>
-                                    </span>
-                                </div>
-                                <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eleifend...</div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <strong>John Smith</strong>
-                                    <span class="pull-right text-muted">
-                                        <em>Yesterday</em>
-                                    </span>
-                                </div>
-                                <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eleifend...</div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <strong>John Smith</strong>
-                                    <span class="pull-right text-muted">
-                                        <em>Yesterday</em>
-                                    </span>
-                                </div>
-                                <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eleifend...</div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a class="text-center" href="#">
-                                <strong>Read All Messages</strong>
+                    <ul class="dropdown-menu dropdown-messages" id="msgResult">
+                       <!-- =================================쪽지내용 들어갈 부분===================================== --> 
+                    	<li>
+                            <a class="text-center" href="/message/list">
+                                <strong>MY 쪽지함</strong>
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         </li>
                     </ul>
                     <!-- /.dropdown-messages -->
                 </li>
+                </sec:authorize>
                 <!-- /.dropdown -->
-                <li class="dropdown">
+ <!--                <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                         <i class="fa fa-tasks fa-fw"></i> <i class="fa fa-caret-down"></i>
                     </a>
@@ -188,7 +260,7 @@
                         </li>
                     </ul>
                     <!-- /.dropdown-tasks -->
-                </li>
+                <!--  </li>--> 
                 <!-- /.dropdown -->
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
@@ -264,15 +336,15 @@
     <li class="divider"></li>
 		<sec:authorize access="isAuthenticated()"> 
 		 
-		<li><a href="#"><i class="fa fa-sign-out fa-fw"></i>
+		<li><a href="/member/customLogout"><i class="fa fa-sign-out fa-fw"></i>
 		    로그아웃</a></li>
 		</sec:authorize>
 		
-		<%-- <sec:authorize access="isAnonymous()"> --%>
+		 <sec:authorize access="isAnonymous()"> 
 		
-		<li><a href="#"><i class="fa fa-sign-out fa-fw"></i>
+		<li><a href="/member/customLogin"><i class="fa fa-sign-out fa-fw"></i>
 		    로그인</a></li>
-		<%-- </sec:authorize> --%>
+		 </sec:authorize> 
 </ul>
                     <!-- /.dropdown-user -->
                 </li>
@@ -295,10 +367,10 @@
                             <!-- /input-group -->
                         </li>
                         <li>
-                            <a href="board/list">자유게시판</a>
+                            <a href="/board/list">자유게시판</a>
                         </li>
                         <li>
-                            <a href="GBoard/list">갤러리게시판</a>
+                            <a href="/Gboard/list">갤러리게시판</a>
                         </li>
                         
                     </ul>

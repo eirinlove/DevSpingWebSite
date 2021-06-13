@@ -261,6 +261,20 @@
     <version>5.0.6.RELEASE</version>
 </dependency>
 
+	<!-- websoket -->
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-websocket</artifactId>
+		<version>4.2.4.RELEASE</version>
+	</dependency>
+	  <dependency>
+            <groupId>javax.websocket</groupId>
+            <artifactId>javax.websocket-api</artifactId>
+            <version>1.1</version>
+            <scope>provided</scope>
+        </dependency>
+	
+
 	</dependencies>
 	<build>
 		<plugins>

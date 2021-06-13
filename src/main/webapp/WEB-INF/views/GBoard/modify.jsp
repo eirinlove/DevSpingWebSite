@@ -40,7 +40,7 @@
 		return true;
 	}
 	$(document).ready(function(){
-		var formObj = $("form");
+		var formObj = $("#actionForm");
 		
 	//1.버튼의 data-oper속성을 통해 수정/취소 판단 후 실행==========================================================
 		$('button').on("click", function(e){
@@ -50,7 +50,7 @@
 			console.log(operation);
 			
 			if(operation === 'list'){
-				formObj.attr("action", "/Gboard/list").attr("method");
+				formObj.attr("action", "/Gboard/list").attr("method","get");
 				var pageNum= $("input[name='pageNum']").clone();
 				var amount=	$("input[name='amount']").clone();
 				
@@ -63,13 +63,13 @@
 				var str="";
 				$(".uploadResult ul li").each(function(i,obj){
 					var obj = $(obj);
-					console.dir(obj);
 					//5.수정된 파일정보 히든값으로 넘기기=====================================
 					str += "<input type='hidden' name='attachList["+i+"].fileName' value='"+obj.data("filename")+"'>"
 					str += "<input type='hidden' name='attachList["+i+"].uuid' value='"+obj.data("uuid")+"'>"
-					str += "<input type='hidden' name='attachList["+i+"].uploadPath' value='"+obj.data("uploadPath")+"'>"
-					str += "<input type='hidden' name='attachList["+i+"].fileType' value='"+obj.data("fileType")+"'>"
+					str += "<input type='hidden' name='attachList["+i+"].uploadPath' value='"+obj.data("path")+"'>"
+					str += "<input type='hidden' name='attachList["+i+"].fileType' value='"+obj.data("type")+"'>"
 				});
+				//formObj.append(str);
 				formObj.append(str).submit();
 			}
 			formObj.submit();
@@ -78,7 +78,7 @@
 		
 		(function(){
 			var gno = '<c:out value="${Gboard.gno}"/>';
-			$.getJSON("${pageContext.request.contextPath}/Gboard/getAttachList", {gno:gno}, function(arr){
+			$.getJSON("/Gboard/getAttachList", {gno:gno}, function(arr){
 				var str = "";
 				
 				$(arr).each(function(i,attach){
@@ -181,7 +181,7 @@
     </div>
     <!-- /.row -->
      <div class="container">
-      <form class="form-horizontal" id="actionFrom" method="post" >
+      <form class="form-horizontal" id="actionForm" method="post" >
         <!--=========================제목=========================-->
         <div class="form-group">
           <label class="control-label col-sm-2" for="title">제목</label>
@@ -232,23 +232,21 @@
        </div>
       </div>
       
-      <!--=========================등록/ 취소 버튼=========================-->
+      <!--=========================수정/ 취소 버튼=========================-->
         <div class="form-group">        
           <div class="col-sm-offset-2 col-sm-10">
             <button type="submit" data-oper="update" class="btn btn-default">수정</button>
             <button type="submit" data-oper="list" class="btn btn-default">취소</button>
-            <input type="hidden" value='<c:out value="${Gboard.gno }"/>' name="gno">
-            <input type='hidden' name='${_csrf.parameterName}' value="${_csrf.token}"/>
+            <input type="hidden" name="gno" value='<c:out value="${Gboard.gno }"/>' >
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
           </div>
         </div>
       </form>
 </div>
   
   
-	<input id="gno" type="hidden" value="<c:out value='${Gboard.gno}' />" />
 	<input type='hidden' name='pageNum' value='<c:out value="${cri.pageNum}"/>'>
 	<input type='hidden' name='amount' value='<c:out value="${cri.amount}"/>'>
-	<input type='hidden' name='amount' value='<c:out value="${cri.amount}"/>' />
 	<input type='hidden' name='type' value='<c:out value="${cri.type }"/>'>
 	<input type='hidden' name='keyword' value='<c:out value="${cri.keyword }"/>'>
   

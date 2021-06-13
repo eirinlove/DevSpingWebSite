@@ -112,3 +112,14 @@ insert into member_auth(userid, auth) values('user00','ROLE_USER');
 insert into member_auth(userid, auth) values('member00','ROLE_MANAGER');
 insert into member_auth(userid, auth) values('admin00','ROLE_MANAGER');
 insert into member_auth(userid, auth) values('admin00','ROLE_ADMIN');
+
+create table message(
+    mno number primary key,
+    receiver varchar2(50),
+    msgdate date,
+    content varchar2(600),
+    sender varchar2(50),
+    readyn char(1) default 'N'
+);
+
+create sequence message_sequence;

@@ -58,6 +58,10 @@
 	}
 </style>
 <script>
+//csrf 토큰값===========================================================================
+var csrfHeaderName = "${_csrf.headerName}";
+var csrfTokenValue = "${_csrf.token}";
+
 //추천하기======================================================
 function recommend(id){
 		var rcmText = $("#recommendText").text().trim();
@@ -74,10 +78,14 @@ function recommend(id){
 			}
 			if(check){
 				var gno = "${Gboard.gno}";
+				console.log(gno);
 				$.ajax({
 					url: "/Gboard/recommend",
 					data: {id:id,gno: gno},
 					type: "post",
+					beforeSend: function(xhr){
+						xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+					},
 					success:function(result){
 						if(result == 'recommend'){
 							$("#recommendText").empty();
@@ -153,6 +161,22 @@ function recommend(id){
 			self.location = "/Gboard/download?fileName="+imgPath;
 		});
 		
+		//메시지 전송=======================================================================================================
+		$("#messageSend").on("click",function(){
+			$.ajax({
+				url:"/message/insert",
+				type:"POST",
+				data:$("#messageForm").serialize(),
+				success:function(result){
+					if(result==="success")
+						$("#myModal").modal("hide");
+				},
+				error:function(request,status,error){
+					alert("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);
+				}
+			});//end ajax
+		});//end messageSend
+		
 		
 			
 	});
@@ -193,7 +217,49 @@ function recommend(id){
             <div class="col-lg-9 text-right">
               <span class="post-info">조회수 <c:out value="${Gboard.visit}"/></span> 
               <span class="post-info">추천수 <c:out value="${Gboard.recommend }"/></span><br>
-             
+             	<!-- =========================================================쪽지보내기=========================================================== -->
+             	<!-- ===================================================로그인한 사용자만 쪽지보내기 가능============================================== -->
+             	<sec:authorize access="isAuthenticated()">
+             	<button type="button" class="btn btn-default" data-toggle="modal" data-target="#myModal" id="msgBtn">
+             			쪽지보내기
+             	</button>
+				</sec:authorize>
+			<!-- Modal -->
+			<div id="myModal" class="modal fade" role="dialog">
+			  <div class="modal-dialog">
+			
+			    <!-- Modal content-->
+			    <div class="modal-content">
+			      <div class="modal-header">
+			        <button type="button" class="close" data-dismiss="modal">&times;</button>
+			        <h4 class="modal-title">쪽지전송</h4>
+			      </div>
+			      <div class="modal-body">
+			      <form id="messageForm">
+			      <div class="row">
+					<div class="col-lg-6">
+						받는 아이디 <input type="text" name="receiver" value='<c:out value="${Gboard.writer}" />' class="form-control"/>
+					</div>
+					<div class="col-lg-6">
+						보내는 아이디 <input type="text" name="sender" value='<c:out value="${id}" />' class="form-control"/>
+					</div>
+					</div>
+					<div class="row">
+						<div class="col-lg-12">
+							내용
+							<textarea cols="200" name="content" class="form-control"></textarea>
+						</div>
+					</div>		
+					</form>
+			      </div>
+			      <div class="modal-footer">
+			        <button type="button" class="btn btn-default" id="messageSend" >전송</button>
+			      </div>
+			    </div>
+			
+			  </div>
+			</div><!-- end Modal -->
+			<!-- ============================================================추천하기=================================================================================== -->             	
 	              <button type="button" class="btn btn-default" id="recommend" onclick="recommend('${id}');">
 	                 <span class="glyphicon glyphicon-thumbs-up"></span> 
 	                 <span id="recommendText">
@@ -292,7 +358,9 @@ function recommend(id){
 			formObj.attr("action","/Gboard/list").attr("method","get").empty().submit();
 		});
 		$("button[data-oper='remove']").on('click',function(e){
-			formObj.attr("action","/Gboard/remove").submit();
+			if(confirm("해당 글을 삭제하시겠숩니까?")){
+				formObj.attr("action","/Gboard/remove").submit();
+			}
 		});
 	});
 	
