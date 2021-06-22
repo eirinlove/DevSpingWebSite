@@ -13,4 +13,6 @@ public class ReplyVO {
 		private String replayer; //댓글 작성자
 		private Date replyDate; //작성일
 		private Date updateDate; //수정일
+		
+		private char hide; // 비밀글 체크
 }
