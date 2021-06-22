@@ -154,6 +154,7 @@
 										</div> <textarea id="rmdInput" class="form-control" name="reply"
 											id="exampleFormControlTextarea1" rows="3"></textarea>
 										<button id="rmdBtn"type="button" class="btn btn-dark mt-3">등록</button>
+										<form name="superhide" method="post" action="#"><input type="checkbox" name="hidecheck" value="" onclick="hidebutton()"> n번방</form> <!-- 2021-06-22 form 및 onclick 함수 추가. -->
 										</sec:authorize>
 										
 									</li>
@@ -249,6 +250,19 @@
 <script type="text/javascript" src="/resources/js/reply.js"></script>
 
 <script type="text/javascript">
+
+////2021-06-22  체크박스 인식하는 부분 /////
+var hidetemp = 0;
+function hidebutton(){
+	
+	if (document.superhide.hidecheck.checked == true){
+		hidetemp = 1;
+		
+	}
+	else { hidetemp = 0;}
+}
+//// 2021-06-22 여기까지 ////
+
 $(document).ready(function(){
 	console.log(replyService)
 	
@@ -374,10 +388,10 @@ var replyChat = $(".chat");
 //게시글의 조회와 동시에 댓글 목록을 가져온다.===================================================
  	showList(1);
 	 
-	 //댓글 조회 메서드=========================
+	 	 //댓글 조회 메서드=========================
 	 function showList(page){
 		 console.log(page);
-		 replyService.getList({bno:bnoValue, page:page||1}, function(replyCnt,list){
+		 replyService.getList({bno:bnoValue, page:page||1}, function(replyCnt,list){ //
 			 console.log("replyCnt:  " + replyCnt);
 			 console.log("list:  " + list);
 
@@ -392,11 +406,25 @@ var replyChat = $(".chat");
 				 return;
 			 }
 			 for(var i=0, len=list.length||0; i<len; i++){
-				 str +=" <li id='rnoid' class='left claerfix' data-rno='"+list[i].rno+"'>";
+				 //////// 2021-06-20 작업본 ///////
+				if(list[i].hide != 't' || loginUser==list[i].replayer){ // DB에서 읽은 hide의 상태에 따라 't' = 비밀댓글, 아니면... 게이야.. 
+				 str +=" <li id='rnoid' class='left claerfix' data-rno='"+list[i].rno+"'>"; //html문장 + 자바스크립트 + html태그 종료
 				 str +="  <div><div id='replyID'><strong class='primary-font' id='span_id'>"+list[i].replayer+"</strong>";
 				 str +="   <small class='pull-right text-muted'>"+replyService.displayTime(list[i].replyDate)+"</small></div>";
 				 str +="    <p id='Rereply'>"+list[i].reply+"</p><button id='Replyremove' type='button' data-rno='"+list[i].rno+"' data-id='"+list[i].replayer+"'>삭제</button></div></li>";
+				}
+		 else if (list[i].hide == 't' && loginUser!=list[i].replayer  ){  // 2021-06-21 loginUser와 replayer 비교
+			 str +=" <li id='rnoid' class='left claerfix' data-rno='"+list[i].rno+"'>"; //html문장 + 자바스크립트 + html태그 종료
+			 str +="  <div><div id='replyID'><strong class='primary-font' id='span_id'>"+list[i].replayer+"</strong>";
+			 str +="   <small class='pull-right text-muted'>"+replyService.displayTime(list[i].replyDate)+"</small></div>";
+			 str +="    <p id='Rereply'>비밀 댓글이다 게이야</p><button id='Replyremove' type='button' data-rno='"+list[i].rno+"' data-id='"+list[i].replayer+"'>삭제</button></div></li>"; // else if 문 추가.
+		 }
+		//////// 여기까지  2021-06-20 작업본 ///////
 			 }
+				 
+
+				 
+
 			 replyChat.html(str);
 			 
 			showReplyPage(replyCnt);
@@ -435,19 +463,45 @@ $(document).ajaxSend(function(e,xhr,options){
 		xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
 	});
 	
-	//댓글 등록 처리============================================================================
-	rmdBtn.on("click", function(e){
-		var reply = {
-				reply : rmdInput.val(),
-				replayer : rmdReplayer.val(),
-				bno : bnoValue };
+//댓글 등록 처리============================================================================
+////////// 2021-06-22 체크 여부를 판단해서, hide[비밀댓글 여부]를 t, f로 분간하여 보냄  ////
+////////// 2021-06-22 스펠체크(텍스트 필드 공간 null 여부,), 공백 문자 (blank_pattern) 인식 기능 추가.////
+rmdBtn.on("click", function(e){
+	var spellCheck = document.getElementById("rmdInput");
+	var blank_pattern = /^\s+|\s+$/g;
+	if(spellCheck.value == '' || spellCheck.value == null){
+		alert('뭐라도 써라 페미새끼야');
 		
-		replyService.add(reply, function(result){
-			alert("댓글 작성 성공");
-			showList(1);
-		});
-		
-		});//end rmdBtn
+	}
+	else if (spellCheck.value.replace(blank_pattern, '' ) == "" ){
+		alert('스페이스바 존나 누르네');
+	}
+	else{
+	
+	if(hidetemp == 1){
+	var reply = {
+			reply : rmdInput.val(),
+			replayer : rmdReplayer.val(),
+			bno : bnoValue,
+			hide : 't'};
+	
+	alert('비밀글 썼음');
+	}
+	if (hidetemp == 0) {		var reply = {
+			reply : rmdInput.val(),
+			replayer : rmdReplayer.val(),
+			bno : bnoValue,
+			hide : 'f'};
+	
+	alert('공개글 쌌음');
+	}
+	
+	///// 2021-06-22 여기까지 ////
+	replyService.add(reply, function(result){
+		showList(1);
+	});
+	}
+	});//end rmdBtn
 		
 	//댓글 삭제===============================================================================	 
 	replyChat.on("click", "button", function(e){

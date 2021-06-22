@@ -21,4 +21,7 @@ public interface ReplyMapper {
 	//댓글 숫자 파악
 	public int getCountByBno(Long bno);
 	
+	public int hidecheck(ReplyVO hide); 
+	// 비밀글 체크 
+	
 }

@@ -6,8 +6,8 @@
 <mapper namespace="org.yoon.mapper.ReplyMapper">
 	<!-- 댓글 추가 -->
 	<insert id="insert">
-		insert into reply (rno, bno, reply, replayer)
-		values (seq_reply.nextval, #{bno}, #{reply}, #{replayer})
+		insert into reply (rno, bno, reply, replayer, hide)
+		values (seq_reply.nextval, #{bno}, #{reply}, #{replayer}, #{hide})
 	</insert>
 	
 	<!-- 댓글조회 -->
