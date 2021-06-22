@@ -423,7 +423,7 @@ var replyChat = $(".chat");
 		 str +="  <div><div id='replyID'><strong class='primary-font' id='span_id'>"+list[i].replayer+"</strong>";
 		 str +="   <small class='pull-right text-muted'>"+replyService.displayTime(list[i].replyDate)+"</small></div>";
 		 str +="    <p id='Rereply'>"+list[i].reply+"</p><button id='Replyremove' type='button' data-rno='"+list[i].rno+"' data-id='"+list[i].replayer+"'>삭제</button></div></li>";}
-		//////// 여기까지  2021-06-20 작업본 ///////
+		//////// 여기까지  2021-06-20 작업본 /////////
 			 }
 				 
 
