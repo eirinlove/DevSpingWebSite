@@ -407,7 +407,7 @@ var replyChat = $(".chat");
 			 }
 			 for(var i=0, len=list.length||0; i<len; i++){
 				 //////// 2021-06-20 작업본 ///////
-				if(list[i].hide != 't' || loginUser==list[i].replayer){ // DB에서 읽은 hide의 상태에 따라 't' = 비밀댓글, 아니면... 게이야.. 
+				if(list[i].hide != 't' || loginUser==list[i].replayer || loginUser=="${board.writer}"  ){ // DB에서 읽은 hide의 상태에 따라 't' = 비밀댓글, 아니면... 게이야.. 
 				 str +=" <li id='rnoid' class='left claerfix' data-rno='"+list[i].rno+"'>"; //html문장 + 자바스크립트 + html태그 종료
 				 str +="  <div><div id='replyID'><strong class='primary-font' id='span_id'>"+list[i].replayer+"</strong>";
 				 str +="   <small class='pull-right text-muted'>"+replyService.displayTime(list[i].replyDate)+"</small></div>";
@@ -417,8 +417,12 @@ var replyChat = $(".chat");
 			 str +=" <li id='rnoid' class='left claerfix' data-rno='"+list[i].rno+"'>"; //html문장 + 자바스크립트 + html태그 종료
 			 str +="  <div><div id='replyID'><strong class='primary-font' id='span_id'>"+list[i].replayer+"</strong>";
 			 str +="   <small class='pull-right text-muted'>"+replyService.displayTime(list[i].replyDate)+"</small></div>";
-			 str +="    <p id='Rereply'>비밀 댓글이다 게이야</p><button id='Replyremove' type='button' data-rno='"+list[i].rno+"' data-id='"+list[i].replayer+"'>삭제</button></div></li>"; // else if 문 추가.
+			 str +="    <p id='Rereply'>비밀 댓글입니다.</p><button id='Replyremove' type='button' data-rno='"+list[i].rno+"' data-id='"+list[i].replayer+"'>삭제</button></div></li>"; // else if 문 추가.
 		 }
+		 else {				 str +=" <li id='rnoid' class='left claerfix' data-rno='"+list[i].rno+"'>"; //html문장 + 자바스크립트 + html태그 종료
+		 str +="  <div><div id='replyID'><strong class='primary-font' id='span_id'>"+list[i].replayer+"</strong>";
+		 str +="   <small class='pull-right text-muted'>"+replyService.displayTime(list[i].replyDate)+"</small></div>";
+		 str +="    <p id='Rereply'>"+list[i].reply+"</p><button id='Replyremove' type='button' data-rno='"+list[i].rno+"' data-id='"+list[i].replayer+"'>삭제</button></div></li>";}
 		//////// 여기까지  2021-06-20 작업본 ///////
 			 }
 				 
